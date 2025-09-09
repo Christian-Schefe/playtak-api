@@ -14,7 +14,7 @@ import java.util.concurrent.locks.*;
  * @author Nohat
  */
 
-public class Websocket {
+public class Websocket implements WebsocketConnection {
     public Socket socket;
     InputStream stream;
     OutputStream outstream;
@@ -69,7 +69,7 @@ public class Websocket {
 
     }
 
-    public String recieve(boolean blocking) {
+    public String receive(boolean blocking) {
         try {
             //TakServer.Log("New recieve "+String.valueOf(readbufferused));
             if (streamended) {
@@ -167,7 +167,7 @@ public class Websocket {
                                     return null;
                                 }
                             }
-                            return recieve(false);
+                            return receive(false);
                         }
                     }
                 }
@@ -178,7 +178,7 @@ public class Websocket {
                         return null;
                     }
                     readbufferused += dataread;
-                    return recieve(false);
+                    return receive(false);
                 }
                 return null;
             } else {
@@ -222,7 +222,7 @@ public class Websocket {
                             readbufferoffset = 0;
                         }
 
-                        return recieve(false);
+                        return receive(false);
                     }
                 }
                 if (readbufferused >= buffersize) {
@@ -236,7 +236,7 @@ public class Websocket {
                         return null;
                     }
                     readbufferused += dataread;
-                    return recieve(false);
+                    return receive(false);
                 }
                 return null;
             }
@@ -306,6 +306,16 @@ public class Websocket {
         } catch (Throwable t) {
 
         }
+    }
+
+    @Override
+    public boolean isHeaderEnded() {
+        return headerended;
+    }
+
+    @Override
+    public boolean isStreamEnded() {
+        return streamended;
     }
 }
 

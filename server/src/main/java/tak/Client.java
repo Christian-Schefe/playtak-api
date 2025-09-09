@@ -34,7 +34,7 @@ import java.util.ArrayList;
  */
 public class Client extends Thread implements Publisher<GameUpdate> {
 
-    Websocket websocket;
+    WebsocketConnection websocket;
     Player player = null;
     int clientNo;
     public int protocolVersion = 0;
@@ -154,8 +154,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
     String sudoString = "sudo ([^\n\r]{1,256})";
     Pattern sudoPattern;
 
-    /* Mod commands start with sudoString */
-    String gagString = "sudo gag ([a-zA-Z][a-zA-Z0-9_]{3,15})";
+    /* Mod commands start with sudoString */ String gagString = "sudo gag ([a-zA-Z][a-zA-Z0-9_]{3,15})";
     Pattern gagPattern;
 
     String unGagString = "sudo ungag ([a-zA-Z][a-zA-Z0-9_]{3,15})";
@@ -201,7 +200,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
     String broadcastString = "sudo broadcast ([^\n\r]{1,256})";
     Pattern broadcastPattern;
 
-    Client(Websocket socket) {
+    public Client(WebsocketConnection socket) {
         websocket = socket;
         this.clientNo = totalClients.incrementAndGet();
         this.lastActivity = System.currentTimeMillis();
@@ -373,8 +372,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
         long now = System.currentTimeMillis();
 
         clientConnections.forEach(client -> {
-            if (client.websocket.streamended ||
-                    (now - client.lastActivity > STALE_CONNECTION_TIMEOUT)) {
+            if (client.websocket.isStreamEnded() || (now - client.lastActivity > STALE_CONNECTION_TIMEOUT)) {
                 try {
                     TakServer.Log("Cleaning up stale connection for client: " + client.clientNo);
                     client.clientQuit();
@@ -394,17 +392,17 @@ public class Client extends Thread implements Publisher<GameUpdate> {
     public void run() {
         String temp = null;
         try {
-            while (!websocket.headerended && !websocket.streamended) {
-                temp = websocket.recieve(true);
+            while (!websocket.isHeaderEnded() && !websocket.isStreamEnded()) {
+                temp = websocket.receive(true);
             }
             websocket.send("Welcome!");
             websocket.send("Login or Register");
             Log("Welcome sent");
             mainloop:
-            while (!websocket.streamended) {
+            while (!websocket.isStreamEnded()) {
                 while (temp == null) {
-                    temp = websocket.recieve(true);
-                    if (websocket.streamended) {
+                    temp = websocket.receive(true);
+                    if (websocket.isStreamEnded()) {
                         break mainloop;
                     }
                 }
@@ -520,8 +518,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                                         sendAllOnline("Online " + clientConnections.size());
                                         onlinePlayerMessageHandler();
                                     }
-                                } else
-                                    send("Authentication failure");
+                                } else send("Authentication failure");
                             }
                         } finally {
                             Player.loginLock.unlock();
@@ -583,8 +580,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                         } else {
                             send("No such player");
                         }
-                    } else
-                        sendNOK();
+                    } else sendNOK();
                 } else {
                     Log("Read:" + temp);
 
@@ -607,26 +603,9 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             } else {
                                 Seek.COLOR clr = Seek.COLOR.ANY;
 
-                                if ("W".equals(m.group(4)))
-                                    clr = Seek.COLOR.WHITE;
-                                else if ("B".equals(m.group(4)))
-                                    clr = Seek.COLOR.BLACK;
-                                seek = Seek.newSeek(
-                                        this,
-                                        Integer.parseInt(m.group(1)),
-                                        Integer.parseInt(m.group(2)),
-                                        Integer.parseInt(m.group(3)),
-                                        clr,
-                                        Integer.parseInt(m.group(5)),
-                                        Integer.parseInt(m.group(6)),
-                                        Integer.parseInt(m.group(7)),
-                                        Integer.parseInt(m.group(8)),
-                                        Integer.parseInt(m.group(9)),
-                                        Integer.parseInt(m.group(10)),
-                                        Integer.parseInt(m.group(11)),
-                                        m.group(12),
-                                        null
-                                );
+                                if ("W".equals(m.group(4))) clr = Seek.COLOR.WHITE;
+                                else if ("B".equals(m.group(4))) clr = Seek.COLOR.BLACK;
+                                seek = Seek.newSeek(this, Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), clr, Integer.parseInt(m.group(5)), Integer.parseInt(m.group(6)), Integer.parseInt(m.group(7)), Integer.parseInt(m.group(8)), Integer.parseInt(m.group(9)), Integer.parseInt(m.group(10)), Integer.parseInt(m.group(11)), m.group(12), null);
                                 Log("Seek " + seek.boardSize);
                             }
                         } finally {
@@ -647,26 +626,9 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             } else {
                                 Seek.COLOR clr = Seek.COLOR.ANY;
 
-                                if ("W".equals(m.group(4)))
-                                    clr = Seek.COLOR.WHITE;
-                                else if ("B".equals(m.group(4)))
-                                    clr = Seek.COLOR.BLACK;
-                                seek = Seek.newSeek(
-                                        this,
-                                        Integer.parseInt(m.group(1)),
-                                        Integer.parseInt(m.group(2)),
-                                        Integer.parseInt(m.group(3)),
-                                        clr,
-                                        Integer.parseInt(m.group(5)),
-                                        Integer.parseInt(m.group(6)),
-                                        Integer.parseInt(m.group(7)),
-                                        Integer.parseInt(m.group(8)),
-                                        Integer.parseInt(m.group(9)),
-                                        0,
-                                        0,
-                                        m.group(10),
-                                        null
-                                );
+                                if ("W".equals(m.group(4))) clr = Seek.COLOR.WHITE;
+                                else if ("B".equals(m.group(4))) clr = Seek.COLOR.BLACK;
+                                seek = Seek.newSeek(this, Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), clr, Integer.parseInt(m.group(5)), Integer.parseInt(m.group(6)), Integer.parseInt(m.group(7)), Integer.parseInt(m.group(8)), Integer.parseInt(m.group(9)), 0, 0, m.group(10), null);
                                 Log("Seek " + seek.boardSize);
                             }
                         } finally {
@@ -687,10 +649,8 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             } else {
                                 Seek.COLOR clr = Seek.COLOR.ANY;
 
-                                if (" W".equals(m.group(4)))
-                                    clr = Seek.COLOR.WHITE;
-                                else if (" B".equals(m.group(4)))
-                                    clr = Seek.COLOR.BLACK;
+                                if (" W".equals(m.group(4))) clr = Seek.COLOR.WHITE;
+                                else if (" B".equals(m.group(4))) clr = Seek.COLOR.BLACK;
 
                                 int capstonesCount = 0;
                                 int tilesCount = 0;
@@ -721,22 +681,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                                         break;
                                 }
 
-                                seek = Seek.newSeek(
-                                        this,
-                                        Integer.parseInt(m.group(1)),
-                                        Integer.parseInt(m.group(2)),
-                                        Integer.parseInt(m.group(3)),
-                                        clr,
-                                        0,
-                                        tilesCount,
-                                        capstonesCount,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        "",
-                                        null
-                                );
+                                seek = Seek.newSeek(this, Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)), clr, 0, tilesCount, capstonesCount, 0, 0, 0, 0, "", null);
                                 Log("Seek " + seek.boardSize);
                             }
                         } finally {
@@ -803,9 +748,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             if (sk != null && sk.opponent.toLowerCase().equals(player.getName().toLowerCase())) {
                                 send("Accept Rematch " + sk.no);
                             } else {
-                                seek = Seek.newRematchSeek(
-                                        this,
-                                        Integer.parseInt(m.group(1)), // ID
+                                seek = Seek.newRematchSeek(this, Integer.parseInt(m.group(1)), // ID
                                         Integer.parseInt(m.group(2)), // size
                                         Integer.parseInt(m.group(3)), // time
                                         Integer.parseInt(m.group(4)), // increment
@@ -941,8 +884,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             } finally {
                                 game.gameLock.unlock();
                             }
-                        } else
-                            sendNOK();
+                        } else sendNOK();
                     }
                     //UnobserveGame
                     else if ((m = unobservePattern.matcher(temp)).find()) {
@@ -956,8 +898,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                             } finally {
                                 game.gameLock.unlock();
                             }
-                        } else
-                            sendNOK();
+                        } else sendNOK();
                     }
                     //Shout
                     else if ((m = shoutPattern.matcher(temp)).find()) {
@@ -1017,7 +958,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
                         sendNOK();
                     }
                 }
-                temp = websocket.recieve(true);
+                temp = websocket.receive(true);
             }
         } finally {
             try {
@@ -1049,8 +990,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
     public void onlinePlayerMessageHandler() {
         ArrayList<String> playerNames = new ArrayList<>();
         for (Client c : clientConnections) {
-            if (c.player != null && !c.player.isbot)
-                playerNames.add('"' + c.player.getName() + '"');
+            if (c.player != null && !c.player.isbot) playerNames.add('"' + c.player.getName() + '"');
         }
         sendAllOnline("OnlinePlayers " + playerNames);
     }
@@ -1076,8 +1016,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
     //this has more rights than p
     boolean moreRights(Player p) {
         //if i am mod and other is not mod
-        if (player.isMod() && !p.isMod() || player.isAdmin())
-            return true;
+        if (player.isMod() && !p.isMod() || player.isAdmin()) return true;
 
         return false;
     }
@@ -1252,8 +1191,7 @@ public class Client extends Thread implements Publisher<GameUpdate> {
             } else if ("online".equals(m.group(1))) {
                 String res = "[";
                 for (Client c : clientConnections) {
-                    if (c.player != null)
-                        res += c.player.getName() + ", ";
+                    if (c.player != null) res += c.player.getName() + ", ";
                 }
                 sendSudoReply(res + "]");
             } else {

@@ -24,7 +24,6 @@ import tak.httpHandlers.AddSeekHandler;
  */
 public class TakServer extends Thread {
     public static int port;
-    public static int portws;
     public static int portHttp;
 
     protected static Logger logger = Logger.getLogger(TakServer.class.getName());
@@ -32,7 +31,6 @@ public class TakServer extends Thread {
     @Override
     public void run() {
         ServerSocket ssocket;
-        ServerSocket wsocket;
         HttpServer httpServer;
         // TODO disabling this for now till the native tournament is ready
         // var gameUpdateBroadcaster = new GameUpdateBroadcaster();
@@ -42,9 +40,6 @@ public class TakServer extends Thread {
             ssocket = new ServerSocket(port);
             Log("Server running at " + port);
             ssocket.setSoTimeout(70);
-            wsocket = new ServerSocket(portws);
-            Log("WebSocket Server running at " + portws);
-            wsocket.setSoTimeout(70);
 
             // HTTP Server example from https://stackoverflow.com/questions/3732109/simple-http-server-in-java-using-only-java-se-api
             httpServer = HttpServer.create(new InetSocketAddress(portHttp), 0);
@@ -58,22 +53,13 @@ public class TakServer extends Thread {
 
             while (true) {
                 try {
-                    Date date = new Date();
-                    if ((date.getTime() & 128) == 128) {
-                        Socket socket = ssocket.accept();
-                        TakServer.Log("New Telnet client");
-                        Client cc = new Client(new Telnet(socket));
-                        // TODO disabling this for now till the native tournament is ready
-                        //cc.subscribe(gameUpdateBroadcaster);
-                        cc.start();
-                    } else {
-                        Socket socket = wsocket.accept();
-                        TakServer.Log("New Websocket client");
-                        Client cc = new Client(new Websocket(socket));
-                        // TODO disabling this for now till the native tournament is ready
-                        //cc.subscribe(gameUpdateBroadcaster);
-                        cc.start();
-                    }
+                    Socket socket = ssocket.accept();
+                    TakServer.Log("New Telnet client");
+                    Client cc = new Client(new Telnet(socket));
+                    // TODO disabling this for now till the native tournament is ready
+                    //cc.subscribe(gameUpdateBroadcaster);
+                    cc.start();
+
                 } catch (SocketTimeoutException e) {
 
                 }

@@ -1,6 +1,6 @@
-FROM maven:3-eclipse-temurin-21-alpine as base
+FROM maven:3-eclipse-temurin-24-alpine AS base
 
-FROM base as dev
+FROM base AS dev
 RUN apk add npm
 RUN npm install -g amvn
 
@@ -11,7 +11,7 @@ WORKDIR /app
 # consider removing clean for slightly faster compilation
 ENTRYPOINT amvn clean package exec:java --watch
 
-FROM base as production
+FROM base AS production
 VOLUME /tmp
 WORKDIR /tmp/
 COPY ./pom.xml /tmp/

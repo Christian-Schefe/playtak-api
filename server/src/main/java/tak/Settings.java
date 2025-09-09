@@ -15,6 +15,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import app.Main;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -86,7 +87,7 @@ public class Settings {
         Node node = nList.item(0);
         Element element = (Element) node;
         TakServer.port = Integer.parseInt(element.getElementsByTagName("port").item(0).getTextContent());
-        TakServer.portws = Integer.parseInt(element.getElementsByTagName("portws").item(0).getTextContent());
+        Main.portws = Integer.parseInt(element.getElementsByTagName("portws").item(0).getTextContent());
         TakServer.portHttp = Integer.parseInt(element.getElementsByTagName("porthttp").item(0).getTextContent());
         Database.dbPath = element.getElementsByTagName("db-path").item(0).getTextContent();
         try {

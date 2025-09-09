@@ -40,7 +40,7 @@ public class Telnet extends Websocket {
         writelock = new ReentrantLock();
     }
 
-    public String recieve(boolean blocking) {
+    public String receive(boolean blocking) {
         try {
             if (streamended) {
                 return null;
@@ -76,7 +76,7 @@ public class Telnet extends Websocket {
                     return null;
                 }
                 readbufferused += dataread;
-                return recieve(false);
+                return this.receive(false);
             }
             return null;
         } catch (Throwable t) {
